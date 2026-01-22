@@ -1,0 +1,870 @@
+{
+  "name": "Market Trend Discovery Agent with fully functional Amazon Scraper",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        0,
+        576
+      ],
+      "id": "65bd85b1-050b-47e8-8810-23713f60883c",
+      "name": "When chat message received",
+      "webhookId": "f05e6f98-99e1-4458-8463-529d67830de3"
+    },
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "You are a user intent classification specialist.\n\nYour task: Determine if the user's input relates to rugs trends.\n\nClassification Rules:\nOutput {\"trend\": \"yes\"} if the user:\n• Mentions product trends, trending topics, or market trends\n• Shares URLs from e-commerce platforms (Amazon, Walmart) suggesting trending items\n• Asks about what's popular, trending, or gaining traction\nOutput {\"trend\": \"no\"} if the user:\n• Asks general questions unrelated to trends\n• Shares content without trend indicators\n\nResponse Format:\nReturn ONLY valid JSON with no additional text or explanation\nBase classification strictly on the provided input—do not infer beyond what's explicitly stated\nAnalyze both direct mentions and contextual signals (URLs, keywords, phrasing)"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        224,
+        576
+      ],
+      "id": "e19eadeb-9caa-4536-9c53-4df0a1b57117",
+      "name": "Find User Intent"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        240,
+        800
+      ],
+      "id": "238eb686-01a6-462f-aced-cc61836bcd4b",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "TB2Z6h7fHkRtgIPK",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        368,
+        800
+      ],
+      "id": "ae1f417b-0c57-431b-86f6-8a6969581d81",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Input example:\n// [\n//   {\n//     \"output\": \"```json\\n{\\n  \\\"trend\\\": \\\"no\\\",\\n  \\\"answer\\\": \\\"Hello! How can I help you today?\\\"\\n}\\n```\"\n//   },\n//   {\n//     \"output\": \"```json\\n{\\n  \\\"trend\\\": \\\"yes\\\"\\n}\\n```\"\n//   }\n// ]\n\nreturn items.map(item => {\n  let raw = item.json.output;\n\n  // Remove markdown formatting like ```json ... ```\n  raw = raw.replace(/```json|```/g, \"\").trim();\n\n  let parsed;\n  try {\n    parsed = JSON.parse(raw);\n  } catch (e) {\n    parsed = { trend: \"no\", answer: \"Parsing error\" };\n  }\n\n  return {\n    json: parsed\n  };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        576,
+        576
+      ],
+      "id": "438d4faf-b6b3-4ae0-b0a8-db487be0f91d",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "a13e23f7-f973-4c5e-9ed8-48b235d78138",
+              "leftValue": "={{$json[\"trend\"]}}",
+              "rightValue": "=yes",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        800,
+        576
+      ],
+      "id": "0cd2664a-8b83-4c69-9118-0838e9532646",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "content": "Chatbox Trigger",
+        "height": 432
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -80,
+        304
+      ],
+      "id": "e345d80d-5c5a-4906-9147-0f15b0a337a7",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "Intent Detection",
+        "height": 528,
+        "width": 320,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        176,
+        416
+      ],
+      "id": "267586bb-2256-4bc2-b37b-bdfb93098349",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "Conditions",
+        "height": 336,
+        "width": 448,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        496,
+        400
+      ],
+      "id": "ef335b0c-0884-4fb9-92c0-f5bca163905c",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('When chat message received').item.json.chatInput }}\n",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        1024,
+        1168
+      ],
+      "id": "8502e949-c983-4aaa-a362-066eee5f4b37",
+      "name": "Basic LLM Chain"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        1104,
+        1392
+      ],
+      "id": "6a14afbc-4508-415f-a96e-c50eb28333c2",
+      "name": "Google Gemini Chat Model1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "TB2Z6h7fHkRtgIPK",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://nazmiyalantiquerugs.com/feed",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1.2,
+      "position": [
+        1088,
+        96
+      ],
+      "id": "adf58309-63d3-410a-b421-f2a9bd73e9b7",
+      "name": "Nazmiyal Antique Rugs Blog"
+    },
+    {
+      "parameters": {
+        "url": "https://modernrugimporters.com/blogs/news.atom",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1.2,
+      "position": [
+        1088,
+        288
+      ],
+      "id": "39aa6821-f515-41b7-af7e-2f0ca6108867",
+      "name": "Modern Rug Importers Blog"
+    },
+    {
+      "parameters": {
+        "url": "https://www.homeaccentstoday.com/category/rugs/rss",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1.2,
+      "position": [
+        1088,
+        480
+      ],
+      "id": "01f02965-9a03-4ef4-ac8b-b33ecb612eb9",
+      "name": "Home Accents Today – Rugs / Trendspotting"
+    },
+    {
+      "parameters": {
+        "numberInputs": 4
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1376,
+        352
+      ],
+      "id": "12ff890e-32fc-41a8-b36c-4d7338653e1e",
+      "name": "Merge – RSS Feeds."
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "title, link, pubDate, content, contentSnippet, isoDate",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        1600,
+        384
+      ],
+      "id": "a91813de-7f43-4a0d-ab02-d7811d2a10b5",
+      "name": "Split – RSS Fields"
+    },
+    {
+      "parameters": {
+        "jsCode": "const output = [];\nconst now = new Date();\nconst twoDaysAgo = new Date();\ntwoDaysAgo.setDate(now.getDate() - 7); // only include last 7 days\n\nfor (const item of $input.all()) {\n  const isoDate = new Date(item.json.isoDate);\n  if (isoDate >= twoDaysAgo && isoDate <= now) {\n    output.push(item);\n  }\n}\nreturn output;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1824,
+        384
+      ],
+      "id": "ab8b1470-c100-4eaa-967d-a2087eed9319",
+      "name": "Filter – Recent Items"
+    },
+    {
+      "parameters": {
+        "url": "https://rugshandmade.com/blog/rss",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1.2,
+      "position": [
+        1088,
+        656
+      ],
+      "id": "bd63a71e-8ee3-4435-bbd3-49eb92331dab",
+      "name": "Rugs Handmade Blog"
+    },
+    {
+      "parameters": {
+        "url": "https://cse.google.com/cse?cx=e293cb46b192c4a27",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "key",
+              "value": "AIzaSyD-ZIk1HTaHNAFCIaUfRJppu9jY1kLcDPc"
+            },
+            {
+              "name": "cx",
+              "value": "e293cb46b192c4a27"
+            },
+            {
+              "name": "q",
+              "value": "={{ $('When chat message received').item.json.chatInput }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        1088,
+        848
+      ],
+      "id": "863d991a-56f4-4cdf-a8f1-44050990ea72",
+      "name": "Google Search"
+    },
+    {
+      "parameters": {
+        "jsCode": "let inputText = $input.first().json.chatInput || $('When chat message received').first().json.chatInput;\n\n// Regex patterns\nconst amazonRegex = /(https?:\\/\\/(?:www\\.)?amazon\\.[a-z.]+\\/[^\\s]+)/gi;\n\n// Extract all links\nlet amazonLinks = inputText.match(amazonRegex) || [];\n\n// Function to classify links\nfunction classifyLinks(links, productPattern, collectionPattern) {\n  let products = [];\n  let collections = [];\n  for (let link of links) {\n    if (productPattern.test(link)) {\n      products.push(link);\n    } else if (collectionPattern.test(link)) {\n      collections.push(link);\n    } else {\n      // Unknown type, you can log or ignore\n    }\n  }\n  return { products, collections };\n}\n\n// Amazon: products have /dp/ or /gp/product/, collections /gp/bestsellers/ or /s?\nlet amazonClassified = classifyLinks(amazonLinks, /\\/dp\\/|\\/gp\\/product\\//, /\\/gp\\/bestsellers\\/|\\/s\\?/);\n\n// Return grouped arrays\nreturn [\n  {\n    json: {\n      amazon_products: amazonClassified.products,\n      amazon_collections: amazonClassified.collections\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1040,
+        -368
+      ],
+      "id": "31c97a49-cdfc-4b37-9a6a-36d0b2c66cf8",
+      "name": "Find URLs"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get input JSON\nlet inputData = $input.first().json;\n\n// Function to clean links (remove trailing commas and whitespace)\nfunction cleanLinks(links) {\n    return (links || []).map(l => l.trim().replace(/,+$/, \"\")).filter(Boolean);\n}\n\n// Extract Amazon links: support old 'amazon' array or already separated arrays\nlet allAmazonLinks = [];\nif (inputData.amazon) {\n    allAmazonLinks = cleanLinks(inputData.amazon);\n} else {\n    // If already split arrays exist, merge them\n    allAmazonLinks = cleanLinks([...(inputData.amazon_products || []), ...(inputData.amazon_collections || [])]);\n}\n\n// Classify links: \n// Products have /dp/ or /gp/product/\n// Collections have /gp/bestsellers/ or /s?\nlet amazon_products = [];\nlet amazon_collections = [];\n\nallAmazonLinks.forEach(link => {\n    if (/\\/dp\\/|\\/gp\\/product\\//.test(link)) {\n        amazon_products.push(link);\n    } else if (/\\/gp\\/bestsellers\\/|\\/s\\?/.test(link)) {\n        amazon_collections.push(link);\n    }\n});\n\n// Return only Amazon products and collections\nreturn [\n    {\n        json: {\n            amazon_products,\n            amazon_collections\n        }\n    }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1248,
+        -368
+      ],
+      "id": "864a6ca1-f2b3-4125-929b-254a2a3ce14e",
+      "name": "Amazon Scraper"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get input JSON\nlet inputData = $input.first().json;\n\n// Get Amazon product links safely\nlet amazonProducts = (inputData.amazon_products || []).map(l => l.trim().replace(/,+$/, \"\")).filter(Boolean);\n\n// Return each Amazon product link as its own object\nreturn amazonProducts.map(link => ({\n    json: { url: link }\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1440,
+        -464
+      ],
+      "id": "dd22d820-5a99-4e10-bbfb-3aeddf2204bb",
+      "name": "Amazon Products"
+    },
+    {
+      "parameters": {
+        "amount": 10
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        2080,
+        -464
+      ],
+      "id": "aab002b2-3af1-4270-9a16-a688e55867a9",
+      "name": "Wait",
+      "webhookId": "f70ff107-827a-42d5-a3e9-03a5e67c8fcd"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get input JSON\nlet inputData = $input.first().json;\n\n// Get Amazon collection links safely\nlet amazonCollections = (inputData.amazon_collections || []).map(l => l.trim().replace(/,+$/, \"\")).filter(Boolean);\n\n// Return each Amazon collection link as its own object\nreturn amazonCollections.map(link => ({\n    json: { url: link }\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1440,
+        -240
+      ],
+      "id": "26614442-8150-4b94-a73c-42b48850b8f7",
+      "name": "Amazon Collections"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.url }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "User-Agent",
+              "value": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        1664,
+        -464
+      ],
+      "id": "fcfd664e-68b6-404d-932e-4aa8463e3de4",
+      "name": "Get HTML Content"
+    },
+    {
+      "parameters": {
+        "jsCode": "const cheerio = require('cheerio');\nconst results = [];\n\nfor (const item of $input.all()) {\n  try {\n    const url = item.json.url;\n    const html = item.json.data;\n    const $ = cheerio.load(html);\n    \n    const name = $('#productTitle').text().trim();\n    const price = $('span.a-price span.a-price-whole').first().text().trim();\n    \n    const details = [];\n    $('#feature-bullets ul.a-unordered-list li span.a-list-item').each((i, el) => {\n      const text = $(el).text().trim();\n      if (text && text.length > 0) {\n        details.push(text);\n      }\n    });\n    \n    const pattern = $('#inline-twister-expanded-dimension-text-pattern_name').text().trim();\n    \n    results.push({\n      url,\n      name,\n      price,\n      details,\n      pattern,\n      scraped_at: new Date().toISOString()\n    });\n  } catch (error) {\n    console.error('Error processing item:', error);\n    results.push({\n      url: item.json.url || 'Unknown URL',\n      name: '',\n      price: '',\n      details: [],\n      pattern: '',\n      error: error.message,\n      scraped_at: new Date().toISOString()\n    });\n  }\n}\n\n// Return a single item containing all scraped data as an array\nreturn [{\n  json: {\n    products: results,\n    total_scraped: results.length,\n    successful_scrapes: results.filter(r => !r.error).length,\n    failed_scrapes: results.filter(r => r.error).length,\n    batch_scraped_at: new Date().toISOString()\n  }\n}];\nfor (const item of $input.all()) {\n  try {\n    const url = item.json.url;\n    const html = item.json.data;\n    const $ = cheerio.load(html);\n    \n    const name = $('#productTitle').text().trim();\n    const price = $('span.a-price span.a-price-whole').first().text().trim();\n    \n    const details = [];\n    $('#feature-bullets ul.a-unordered-list li span.a-list-item').each((i, el) => {\n      const text = $(el).text().trim();\n      if (text && text.length > 0) {\n        details.push(text);\n      }\n    });\n    \n    const pattern = $('#inline-twister-expanded-dimension-text-pattern_name').text().trim();\n    \n    results.push({\n      url,\n      name,\n      price,\n      details,\n      pattern,\n      scraped_at: new Date().toISOString()\n    });\n  } catch (error) {\n    console.error('Error processing item:', error);\n    results.push({\n      url: item.json.url || 'Unknown URL',\n      name: '',\n      price: '',\n      details: [],\n      pattern: '',\n      error: error.message,\n      scraped_at: new Date().toISOString()\n    });\n  }\n}\n\n// Return a single item containing all scraped data as an array\nreturn [{\n  json: {\n    products: results,\n    total_scraped: results.length,\n    successful_scrapes: results.filter(r => !r.error).length,\n    failed_scrapes: results.filter(r => r.error).length,\n    batch_scraped_at: new Date().toISOString()\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1872,
+        -464
+      ],
+      "id": "45d334e6-c3d5-4909-b162-c0df839bf617",
+      "name": "Get Amazon Product Detail"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.url }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Cookie",
+              "value": "i18n-prefs=USD; lc-main=en_US; session-id=132-7659494-0248300; session-id-time=2082787201l; skin=noskin"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        1664,
+        -240
+      ],
+      "id": "d2b6d8f5-5bc1-4341-9416-6b2091f589d0",
+      "name": "Get HTML of website"
+    },
+    {
+      "parameters": {
+        "operation": "extractHtmlContent",
+        "extractionValues": {
+          "values": [
+            {
+              "key": "product_links",
+              "cssSelector": "div div a[href*='/dp/']",
+              "returnValue": "attribute",
+              "attribute": "href",
+              "returnArray": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.html",
+      "typeVersion": 1.2,
+      "position": [
+        1872,
+        -240
+      ],
+      "id": "8af1c194-918a-432a-bcb6-e07da120fa6d",
+      "name": "HTML"
+    },
+    {
+      "parameters": {
+        "jsCode": "for (const item of $input.all()) {\n  // Remove duplicates from product_links array\n  const uniqueLinks = [...new Set($input.first().json.product_links)];\n  \n  // Add base URL to make complete URLs\n  const fullUrls = uniqueLinks.map(link => {\n    if (link.startsWith('/')) {\n      return `https://www.amazon.com${link}`;\n    }\n    return link; // in case it's already a full URL\n  });\n  \n  // Update the item with processed URLs\n  item.json.product_links = fullUrls;\n}\n\nreturn $input.all();"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2080,
+        -240
+      ],
+      "id": "71af9fea-0b42-4fdb-88ad-2b8f3442b76a",
+      "name": "Make Amazon accessible URL1."
+    },
+    {
+      "parameters": {
+        "jsCode": "// Split the URLs into individual items for processing one by one\nconst productLinks = $input.first().json.product_links;\nconst results = [];\n\nfor (const link of productLinks) {\n  results.push({\n    url: link\n  });\n}\n\nreturn results.map(r => ({ json: r })).slice(0,10);"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2288,
+        -240
+      ],
+      "id": "c1e253e2-6ed7-4694-94e6-d0e004c18f1b",
+      "name": "Split URLs1"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.url }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "User-Agent",
+              "value": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        2496,
+        -240
+      ],
+      "id": "0779f253-4a43-45e3-8504-0044bcf0477b",
+      "name": "URL-wise HTML gather"
+    },
+    {
+      "parameters": {
+        "jsCode": "const cheerio = require('cheerio');\nconst results = [];\n\nfor (const item of $input.all()) {\n  try {\n    const url = item.json.url;\n    const html = item.json.data;\n    const $ = cheerio.load(html);\n    \n    const name = $('#productTitle').text().trim();\n    const price = $('span.a-price span.a-price-whole').first().text().trim();\n    \n    const details = [];\n    $('#feature-bullets ul.a-unordered-list li span.a-list-item').each((i, el) => {\n      const text = $(el).text().trim();\n      if (text && text.length > 0) {\n        details.push(text);\n      }\n    });\n    \n    const pattern = $('#inline-twister-expanded-dimension-text-pattern_name').text().trim();\n    \n    results.push({\n      url,\n      name,\n      price,\n      details,\n      pattern,\n      scraped_at: new Date().toISOString()\n    });\n  } catch (error) {\n    console.error('Error processing item:', error);\n    results.push({\n      url: item.json.url || 'Unknown URL',\n      name: '',\n      price: '',\n      details: [],\n      pattern: '',\n      error: error.message,\n      scraped_at: new Date().toISOString()\n    });\n  }\n}\n\n// Return a single item containing all scraped data as an array\nreturn [{\n  json: {\n    products: results,\n    total_scraped: results.length,\n    successful_scrapes: results.filter(r => !r.error).length,\n    failed_scrapes: results.filter(r => r.error).length,\n    batch_scraped_at: new Date().toISOString()\n  }\n}];\nfor (const item of $input.all()) {\n  try {\n    const url = item.json.url;\n    const html = item.json.data;\n    const $ = cheerio.load(html);\n    \n    const name = $('#productTitle').text().trim();\n    const price = $('span.a-price span.a-price-whole').first().text().trim();\n    \n    const details = [];\n    $('#feature-bullets ul.a-unordered-list li span.a-list-item').each((i, el) => {\n      const text = $(el).text().trim();\n      if (text && text.length > 0) {\n        details.push(text);\n      }\n    });\n    \n    const pattern = $('#inline-twister-expanded-dimension-text-pattern_name').text().trim();\n    \n    results.push({\n      url,\n      name,\n      price,\n      details,\n      pattern,\n      scraped_at: new Date().toISOString()\n    });\n  } catch (error) {\n    console.error('Error processing item:', error);\n    results.push({\n      url: item.json.url || 'Unknown URL',\n      name: '',\n      price: '',\n      details: [],\n      pattern: '',\n      error: error.message,\n      scraped_at: new Date().toISOString()\n    });\n  }\n}\n\n// Return a single item containing all scraped data as an array\nreturn [{\n  json: {\n    products: results,\n    total_scraped: results.length,\n    successful_scrapes: results.filter(r => !r.error).length,\n    failed_scrapes: results.filter(r => r.error).length,\n    batch_scraped_at: new Date().toISOString()\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2704,
+        -240
+      ],
+      "id": "ba3a2570-a543-46a9-851e-3d1b72aa79a7",
+      "name": "Amazon Scraper2"
+    },
+    {
+      "parameters": {
+        "content": "Amazon Scraper",
+        "height": 544,
+        "width": 1936
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        992,
+        -560
+      ],
+      "id": "addd858f-b437-4529-8fdf-5b8f30829fee",
+      "name": "Sticky Note3"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "Find User Intent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Find User Intent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "Find User Intent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find User Intent": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Modern Rug Importers Blog",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Nazmiyal Antique Rugs Blog",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Home Accents Today – Rugs / Trendspotting",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Rugs Handmade Blog",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Google Search",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Find URLs",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Modern Rug Importers Blog": {
+      "main": [
+        [
+          {
+            "node": "Merge – RSS Feeds.",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Nazmiyal Antique Rugs Blog": {
+      "main": [
+        [
+          {
+            "node": "Merge – RSS Feeds.",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Home Accents Today – Rugs / Trendspotting": {
+      "main": [
+        [
+          {
+            "node": "Merge – RSS Feeds.",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Merge – RSS Feeds.": {
+      "main": [
+        [
+          {
+            "node": "Split – RSS Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split – RSS Fields": {
+      "main": [
+        [
+          {
+            "node": "Filter – Recent Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Rugs Handmade Blog": {
+      "main": [
+        [
+          {
+            "node": "Merge – RSS Feeds.",
+            "type": "main",
+            "index": 3
+          }
+        ]
+      ]
+    },
+    "Find URLs": {
+      "main": [
+        [
+          {
+            "node": "Amazon Scraper",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Amazon Scraper": {
+      "main": [
+        [
+          {
+            "node": "Amazon Products",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Amazon Collections",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Amazon Products": {
+      "main": [
+        [
+          {
+            "node": "Get HTML Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        []
+      ]
+    },
+    "Get HTML Content": {
+      "main": [
+        [
+          {
+            "node": "Get Amazon Product Detail",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Amazon Product Detail": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Amazon Collections": {
+      "main": [
+        [
+          {
+            "node": "Get HTML of website",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get HTML of website": {
+      "main": [
+        [
+          {
+            "node": "HTML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTML": {
+      "main": [
+        [
+          {
+            "node": "Make Amazon accessible URL1.",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Make Amazon accessible URL1.": {
+      "main": [
+        [
+          {
+            "node": "Split URLs1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split URLs1": {
+      "main": [
+        [
+          {
+            "node": "URL-wise HTML gather",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "URL-wise HTML gather": {
+      "main": [
+        [
+          {
+            "node": "Amazon Scraper2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "2f780f8d-7978-4007-bdc2-f24daab34f25",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "c14dc8b263848e25424e0072f0e1a72a34ae315cae8811e2bef5175f81f5209c"
+  },
+  "id": "KhJjGlnVOLueVWYA",
+  "tags": []
+}

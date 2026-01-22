@@ -1,0 +1,122 @@
+{
+  "name": "My workflow",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "d360bd05-4ed7-4dd3-82fc-44f501b6084a",
+      "name": "When clicking ‘Execute workflow’",
+      "alwaysOutputData": true,
+      "executeOnce": false,
+      "retryOnFail": false,
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "content": "This is a test",
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -144,
+        -224
+      ],
+      "typeVersion": 1,
+      "id": "c7c36ba3-3b3f-4705-9b90-814b8ea0299b",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "daysInterval": 8,
+              "triggerAtMinute": 9
+            },
+            {}
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -528,
+        -32
+      ],
+      "id": "ff1d2b11-7846-49c1-88bf-176c1d4ef76e",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "operation": "html",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        -144,
+        176
+      ],
+      "id": "6632295f-ab22-49e8-8cb2-ab6ea01ff273",
+      "name": "Convert to File"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        }
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1,
+      "position": [
+        80,
+        176
+      ],
+      "id": "513e03d7-6bda-4217-b65b-3709014a8195",
+      "name": "Get row(s)"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Convert to File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to File": {
+      "main": [
+        [
+          {
+            "node": "Get row(s)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "31f2d43a-36e4-4da7-82f7-c1ad02f4a178",
+  "meta": {
+    "instanceId": "c14dc8b263848e25424e0072f0e1a72a34ae315cae8811e2bef5175f81f5209c"
+  },
+  "id": "DkOJWkf5Odiee29r",
+  "tags": []
+}

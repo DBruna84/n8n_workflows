@@ -1,0 +1,466 @@
+{
+  "name": "Market Trend Discovery Agent with RSS feeds",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        0,
+        480
+      ],
+      "id": "655b6010-75a6-4d33-bb5b-7589e3e335ba",
+      "name": "When chat message received",
+      "webhookId": "1b8e4229-1744-43e5-b217-63d9c9d5e754"
+    },
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "You are a user intent classification specialist.\n\nYour task: Determine if the user's input relates to rugs trends.\n\nClassification Rules:\nOutput {\"trend\": \"yes\"} if the user:\n• Mentions product trends, trending topics, or market trends\n• Shares URLs from e-commerce platforms (Amazon, Walmart) suggesting trending items\n• Asks about what's popular, trending, or gaining traction\nOutput {\"trend\": \"no\"} if the user:\n• Asks general questions unrelated to trends\n• Shares content without trend indicators\n\nResponse Format:\nReturn ONLY valid JSON with no additional text or explanation\nBase classification strictly on the provided input—do not infer beyond what's explicitly stated\nAnalyze both direct mentions and contextual signals (URLs, keywords, phrasing)"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        224,
+        480
+      ],
+      "id": "dd1bf5d6-4154-40f8-ada0-5010857b574b",
+      "name": "Find User Intent"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        240,
+        704
+      ],
+      "id": "e445b452-1aee-49b1-9bd9-7564ed366cc3",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "TB2Z6h7fHkRtgIPK",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        368,
+        704
+      ],
+      "id": "56cc730a-bc64-4be5-a4a4-ff9abd17d2c6",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Input example:\n// [\n//   {\n//     \"output\": \"```json\\n{\\n  \\\"trend\\\": \\\"no\\\",\\n  \\\"answer\\\": \\\"Hello! How can I help you today?\\\"\\n}\\n```\"\n//   },\n//   {\n//     \"output\": \"```json\\n{\\n  \\\"trend\\\": \\\"yes\\\"\\n}\\n```\"\n//   }\n// ]\n\nreturn items.map(item => {\n  let raw = item.json.output;\n\n  // Remove markdown formatting like ```json ... ```\n  raw = raw.replace(/```json|```/g, \"\").trim();\n\n  let parsed;\n  try {\n    parsed = JSON.parse(raw);\n  } catch (e) {\n    parsed = { trend: \"no\", answer: \"Parsing error\" };\n  }\n\n  return {\n    json: parsed\n  };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        576,
+        480
+      ],
+      "id": "284abe17-3758-4bc6-8cba-04124593c61b",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "a13e23f7-f973-4c5e-9ed8-48b235d78138",
+              "leftValue": "={{$json[\"trend\"]}}",
+              "rightValue": "=yes",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        800,
+        480
+      ],
+      "id": "35f38c78-403c-4e34-89c1-960d9dbd6ff2",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "content": "Chatbox Trigger",
+        "height": 432
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -80,
+        208
+      ],
+      "id": "b18fa269-5728-4f69-88e3-69e5e0177aad",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "Intent Detection",
+        "height": 528,
+        "width": 320,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        176,
+        320
+      ],
+      "id": "d4e15e6b-2afa-4f77-adda-5d7697547a0e",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "Conditions",
+        "height": 336,
+        "width": 480,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        496,
+        304
+      ],
+      "id": "93fd836d-7fc7-4d72-9156-025817a89fbb",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('When chat message received').item.json.chatInput }}\n",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        1024,
+        976
+      ],
+      "id": "1c257f89-547e-481b-a74d-6bee3e78d813",
+      "name": "Basic LLM Chain"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        1104,
+        1200
+      ],
+      "id": "77b71b00-93b1-485f-a8f8-5060f5ae8add",
+      "name": "Google Gemini Chat Model1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "TB2Z6h7fHkRtgIPK",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://nazmiyalantiquerugs.com/feed",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1.2,
+      "position": [
+        1088,
+        96
+      ],
+      "id": "cb12d11f-069b-4b24-9550-6a8df935c0b3",
+      "name": "Nazmiyal Antique Rugs Blog"
+    },
+    {
+      "parameters": {
+        "url": "https://modernrugimporters.com/blogs/news.atom",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1.2,
+      "position": [
+        1088,
+        288
+      ],
+      "id": "e27e769c-87cb-4374-ab93-60ed7196feff",
+      "name": "Modern Rug Importers Blog"
+    },
+    {
+      "parameters": {
+        "url": "https://www.homeaccentstoday.com/category/rugs/rss",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1.2,
+      "position": [
+        1088,
+        480
+      ],
+      "id": "bc5f190e-cb59-419b-aa1b-9a25572b4cdf",
+      "name": "Home Accents Today – Rugs / Trendspotting"
+    },
+    {
+      "parameters": {
+        "numberInputs": 4
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1376,
+        352
+      ],
+      "id": "71249ace-dddc-4e24-947b-dd9594a4f43d",
+      "name": "Merge – RSS Feeds."
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "title, link, pubDate, content, contentSnippet, isoDate",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        1600,
+        384
+      ],
+      "id": "4a2e3d80-5040-4382-838c-49f1c23a2448",
+      "name": "Split – RSS Fields"
+    },
+    {
+      "parameters": {
+        "jsCode": "const output = [];\nconst now = new Date();\nconst twoDaysAgo = new Date();\ntwoDaysAgo.setDate(now.getDate() - 7); // only include last 7 days\n\nfor (const item of $input.all()) {\n  const isoDate = new Date(item.json.isoDate);\n  if (isoDate >= twoDaysAgo && isoDate <= now) {\n    output.push(item);\n  }\n}\nreturn output;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1808,
+        384
+      ],
+      "id": "194f41d4-e0ea-48a6-9753-a6dbf86dcbc2",
+      "name": "Filter – Recent Items"
+    },
+    {
+      "parameters": {
+        "url": "https://rugshandmade.com/blog/rss",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1.2,
+      "position": [
+        1088,
+        672
+      ],
+      "id": "d738acf8-42ed-43c7-957b-8966129be76d",
+      "name": "Rugs Handmade Blog"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "Find User Intent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Find User Intent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "Find User Intent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find User Intent": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Modern Rug Importers Blog",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Nazmiyal Antique Rugs Blog",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Home Accents Today – Rugs / Trendspotting",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Rugs Handmade Blog",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Modern Rug Importers Blog": {
+      "main": [
+        [
+          {
+            "node": "Merge – RSS Feeds.",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Nazmiyal Antique Rugs Blog": {
+      "main": [
+        [
+          {
+            "node": "Merge – RSS Feeds.",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Home Accents Today – Rugs / Trendspotting": {
+      "main": [
+        [
+          {
+            "node": "Merge – RSS Feeds.",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Merge – RSS Feeds.": {
+      "main": [
+        [
+          {
+            "node": "Split – RSS Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split – RSS Fields": {
+      "main": [
+        [
+          {
+            "node": "Filter – Recent Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Rugs Handmade Blog": {
+      "main": [
+        [
+          {
+            "node": "Merge – RSS Feeds.",
+            "type": "main",
+            "index": 3
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "9856e70a-79ba-42e2-98cc-c5a09e5520ae",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "c14dc8b263848e25424e0072f0e1a72a34ae315cae8811e2bef5175f81f5209c"
+  },
+  "id": "h80rdEzTftPBBwiV",
+  "tags": []
+}

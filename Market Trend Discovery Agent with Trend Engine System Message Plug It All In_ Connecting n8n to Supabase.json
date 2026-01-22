@@ -1,0 +1,1266 @@
+{
+  "name": "Market Trend Discovery Agent with Trend Engine System Message Plug It All In: Connecting n8n to Supabase",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        0,
+        576
+      ],
+      "id": "c1e131c6-66bf-44f0-af97-dddd1611ddf5",
+      "name": "When chat message received",
+      "webhookId": "6e9f3b7e-1adb-4780-bb74-51ab850f3637"
+    },
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "“You are an Creative Strategist for the rugs category.”\n\nYour task: Determine if the user's input relates to rugs trends.\n\nClassification Rules:\nOutput {\"trend\": \"yes\"} if the user:\n• Mentions product trends, trending topics, or market trends\n• Shares URLs from e-commerce platforms (Amazon, Walmart) suggesting trending items\n• Asks about what's popular, trending, or gaining traction\nOutput {\"trend\": \"no\"} if the user:\n• Asks general questions unrelated to trends\n• Shares content without trend indicators\n\nResponse Format:\nReturn ONLY valid JSON with no additional text or explanation\nBase classification strictly on the provided input—do not infer beyond what's explicitly stated\nAnalyze both direct mentions and contextual signals (URLs, keywords, phrasing)"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        224,
+        576
+      ],
+      "id": "c9bf725e-8342-4495-9372-7f23757f34da",
+      "name": "Find User Intent"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        240,
+        800
+      ],
+      "id": "3b91425a-d7dc-449c-93c0-b753cdcf9e75",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "TB2Z6h7fHkRtgIPK",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        368,
+        800
+      ],
+      "id": "d5496926-7a9c-4409-ae78-593488b9ba98",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Input example:\n// [\n//   {\n//     \"output\": \"```json\\n{\\n  \\\"trend\\\": \\\"no\\\",\\n  \\\"answer\\\": \\\"Hello! How can I help you today?\\\"\\n}\\n```\"\n//   },\n//   {\n//     \"output\": \"```json\\n{\\n  \\\"trend\\\": \\\"yes\\\"\\n}\\n```\"\n//   }\n// ]\n\nreturn items.map(item => {\n  let raw = item.json.output;\n\n  // Remove markdown formatting like ```json ... ```\n  raw = raw.replace(/```json|```/g, \"\").trim();\n\n  let parsed;\n  try {\n    parsed = JSON.parse(raw);\n  } catch (e) {\n    parsed = { trend: \"no\", answer: \"Parsing error\" };\n  }\n\n  return {\n    json: parsed\n  };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        576,
+        576
+      ],
+      "id": "ac73eb72-9d64-4994-b113-90171907c12c",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "a13e23f7-f973-4c5e-9ed8-48b235d78138",
+              "leftValue": "={{$json[\"trend\"]}}",
+              "rightValue": "=yes",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        800,
+        576
+      ],
+      "id": "97739f7f-f567-49e2-aa98-7be24b6ca578",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "content": "Chatbox Trigger",
+        "height": 432
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -80,
+        304
+      ],
+      "id": "d92bcebe-4ddf-4145-beca-0ce0c95f3edf",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "Intent Detection",
+        "height": 528,
+        "width": 320,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        176,
+        416
+      ],
+      "id": "363bec70-85d5-4471-a71e-a59896cb9d19",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "Conditions",
+        "height": 336,
+        "width": 448,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        496,
+        400
+      ],
+      "id": "baec6dc8-4a46-4503-938e-df90dd49b883",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('When chat message received').item.json.chatInput }}\n",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        1024,
+        976
+      ],
+      "id": "668b59c3-b70b-4221-bdc3-c19c1ff79340",
+      "name": "Basic LLM Chain"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        1104,
+        1136
+      ],
+      "id": "2037b288-fd07-43a5-aecd-597c50a78483",
+      "name": "Google Gemini Chat Model1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "TB2Z6h7fHkRtgIPK",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://nazmiyalantiquerugs.com/feed",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1.2,
+      "position": [
+        1088,
+        96
+      ],
+      "id": "967513c7-42dd-4530-b740-8619eee9d002",
+      "name": "Nazmiyal Antique Rugs Blog"
+    },
+    {
+      "parameters": {
+        "url": "https://modernrugimporters.com/blogs/news.atom",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1.2,
+      "position": [
+        1088,
+        288
+      ],
+      "id": "91d30e7e-974f-4308-be3d-bd54061fbb90",
+      "name": "Modern Rug Importers Blog"
+    },
+    {
+      "parameters": {
+        "url": "https://www.homeaccentstoday.com/category/rugs/rss",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1.2,
+      "position": [
+        1088,
+        480
+      ],
+      "id": "862db968-70e2-43de-9424-a33b7261e85c",
+      "name": "Home Accents Today – Rugs / Trendspotting"
+    },
+    {
+      "parameters": {
+        "numberInputs": 4
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1872,
+        352
+      ],
+      "id": "2e0d6f1b-4a5f-4b08-a87f-9f83bf18bbeb",
+      "name": "Merge – RSS Feeds."
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "title, link, pubDate, content, contentSnippet, isoDate",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        2288,
+        384
+      ],
+      "id": "50708f39-8695-408e-ba17-6360b6e752fb",
+      "name": "Split – RSS Fields"
+    },
+    {
+      "parameters": {
+        "jsCode": "const output = [];\nconst now = new Date();\nconst twoDaysAgo = new Date();\ntwoDaysAgo.setDate(now.getDate() - 7); // only include last 7 days\n\nfor (const item of $input.all()) {\n  const isoDate = new Date(item.json.isoDate);\n  if (isoDate >= twoDaysAgo && isoDate <= now) {\n    output.push(item);\n  }\n}\nreturn output;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2704,
+        384
+      ],
+      "id": "b775dbdf-f71b-42bc-96c7-f2cde84a277c",
+      "name": "Filter – Recent Items"
+    },
+    {
+      "parameters": {
+        "url": "https://rugshandmade.com/blog/rss",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1.2,
+      "position": [
+        1088,
+        656
+      ],
+      "id": "dcdb99c5-cd7a-4697-8440-a6c786eb8a4b",
+      "name": "Rugs Handmade Blog"
+    },
+    {
+      "parameters": {
+        "url": "https://cse.google.com/cse?cx=e293cb46b192c4a27",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "key",
+              "value": "AIzaSyD-ZIk1HTaHNAFCIaUfRJppu9jY1kLcDPc"
+            },
+            {
+              "name": "cx",
+              "value": "e293cb46b192c4a27"
+            },
+            {
+              "name": "q",
+              "value": "={{ $('When chat message received').item.json.chatInput }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        2704,
+        688
+      ],
+      "id": "418b54c9-ba12-49b6-a3f1-d44d6d85fe5f",
+      "name": "Google Search"
+    },
+    {
+      "parameters": {
+        "jsCode": "let inputText = $input.first().json.chatInput || $('When chat message received').first().json.chatInput;\n\n// Regex patterns\nconst amazonRegex = /(https?:\\/\\/(?:www\\.)?amazon\\.[a-z.]+\\/[^\\s]+)/gi;\n\n// Extract all links\nlet amazonLinks = inputText.match(amazonRegex) || [];\n\n// Function to classify links\nfunction classifyLinks(links, productPattern, collectionPattern) {\n  let products = [];\n  let collections = [];\n  for (let link of links) {\n    if (productPattern.test(link)) {\n      products.push(link);\n    } else if (collectionPattern.test(link)) {\n      collections.push(link);\n    } else {\n      // Unknown type, you can log or ignore\n    }\n  }\n  return { products, collections };\n}\n\n// Amazon: products have /dp/ or /gp/product/, collections /gp/bestsellers/ or /s?\nlet amazonClassified = classifyLinks(amazonLinks, /\\/dp\\/|\\/gp\\/product\\//, /\\/gp\\/bestsellers\\/|\\/s\\?/);\n\n// Return grouped arrays\nreturn [\n  {\n    json: {\n      amazon_products: amazonClassified.products,\n      amazon_collections: amazonClassified.collections\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1040,
+        -368
+      ],
+      "id": "82cee452-1b7c-435c-b34d-f111635609b6",
+      "name": "Find URLs"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get input JSON\nlet inputData = $input.first().json;\n\n// Function to clean links (remove trailing commas and whitespace)\nfunction cleanLinks(links) {\n    return (links || []).map(l => l.trim().replace(/,+$/, \"\")).filter(Boolean);\n}\n\n// Extract Amazon links: support old 'amazon' array or already separated arrays\nlet allAmazonLinks = [];\nif (inputData.amazon) {\n    allAmazonLinks = cleanLinks(inputData.amazon);\n} else {\n    // If already split arrays exist, merge them\n    allAmazonLinks = cleanLinks([...(inputData.amazon_products || []), ...(inputData.amazon_collections || [])]);\n}\n\n// Classify links: \n// Products have /dp/ or /gp/product/\n// Collections have /gp/bestsellers/ or /s?\nlet amazon_products = [];\nlet amazon_collections = [];\n\nallAmazonLinks.forEach(link => {\n    if (/\\/dp\\/|\\/gp\\/product\\//.test(link)) {\n        amazon_products.push(link);\n    } else if (/\\/gp\\/bestsellers\\/|\\/s\\?/.test(link)) {\n        amazon_collections.push(link);\n    }\n});\n\n// Return only Amazon products and collections\nreturn [\n    {\n        json: {\n            amazon_products,\n            amazon_collections\n        }\n    }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1248,
+        -368
+      ],
+      "id": "c21f52fb-10e8-4ade-a7fe-66da6730ccae",
+      "name": "Amazon Scraper"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get input JSON\nlet inputData = $input.first().json;\n\n// Get Amazon product links safely\nlet amazonProducts = (inputData.amazon_products || []).map(l => l.trim().replace(/,+$/, \"\")).filter(Boolean);\n\n// Return each Amazon product link as its own object\nreturn amazonProducts.map(link => ({\n    json: { url: link }\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1440,
+        -464
+      ],
+      "id": "99b38d8d-a09f-4e86-97de-069d6bebd961",
+      "name": "Amazon Products"
+    },
+    {
+      "parameters": {
+        "amount": 10
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        2288,
+        -464
+      ],
+      "id": "3f5ddb7b-4972-403c-a9c4-0a39df15f575",
+      "name": "Wait",
+      "webhookId": "b0bfa95b-1fc1-47a0-9927-4ec1016248a7"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get input JSON\nlet inputData = $input.first().json;\n\n// Get Amazon collection links safely\nlet amazonCollections = (inputData.amazon_collections || []).map(l => l.trim().replace(/,+$/, \"\")).filter(Boolean);\n\n// Return each Amazon collection link as its own object\nreturn amazonCollections.map(link => ({\n    json: { url: link }\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1440,
+        -240
+      ],
+      "id": "b388fe5a-dc32-448c-8024-852cbfab131b",
+      "name": "Amazon Collections"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.url }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "User-Agent",
+              "value": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        1872,
+        -464
+      ],
+      "id": "f2576c63-f071-4c26-b5fa-3cf8f571c312",
+      "name": "Get HTML Content"
+    },
+    {
+      "parameters": {
+        "jsCode": "const cheerio = require('cheerio');\nconst results = [];\n\nfor (const item of $input.all()) {\n  try {\n    const url = item.json.url;\n    const html = item.json.data;\n    const $ = cheerio.load(html);\n    \n    const name = $('#productTitle').text().trim();\n    const price = $('span.a-price span.a-price-whole').first().text().trim();\n    \n    const details = [];\n    $('#feature-bullets ul.a-unordered-list li span.a-list-item').each((i, el) => {\n      const text = $(el).text().trim();\n      if (text && text.length > 0) {\n        details.push(text);\n      }\n    });\n    \n    const pattern = $('#inline-twister-expanded-dimension-text-pattern_name').text().trim();\n    \n    results.push({\n      url,\n      name,\n      price,\n      details,\n      pattern,\n      scraped_at: new Date().toISOString()\n    });\n  } catch (error) {\n    console.error('Error processing item:', error);\n    results.push({\n      url: item.json.url || 'Unknown URL',\n      name: '',\n      price: '',\n      details: [],\n      pattern: '',\n      error: error.message,\n      scraped_at: new Date().toISOString()\n    });\n  }\n}\n\n// Return a single item containing all scraped data as an array\nreturn [{\n  json: {\n    products: results,\n    total_scraped: results.length,\n    successful_scrapes: results.filter(r => !r.error).length,\n    failed_scrapes: results.filter(r => r.error).length,\n    batch_scraped_at: new Date().toISOString()\n  }\n}];\nfor (const item of $input.all()) {\n  try {\n    const url = item.json.url;\n    const html = item.json.data;\n    const $ = cheerio.load(html);\n    \n    const name = $('#productTitle').text().trim();\n    const price = $('span.a-price span.a-price-whole').first().text().trim();\n    \n    const details = [];\n    $('#feature-bullets ul.a-unordered-list li span.a-list-item').each((i, el) => {\n      const text = $(el).text().trim();\n      if (text && text.length > 0) {\n        details.push(text);\n      }\n    });\n    \n    const pattern = $('#inline-twister-expanded-dimension-text-pattern_name').text().trim();\n    \n    results.push({\n      url,\n      name,\n      price,\n      details,\n      pattern,\n      scraped_at: new Date().toISOString()\n    });\n  } catch (error) {\n    console.error('Error processing item:', error);\n    results.push({\n      url: item.json.url || 'Unknown URL',\n      name: '',\n      price: '',\n      details: [],\n      pattern: '',\n      error: error.message,\n      scraped_at: new Date().toISOString()\n    });\n  }\n}\n\n// Return a single item containing all scraped data as an array\nreturn [{\n  json: {\n    products: results,\n    total_scraped: results.length,\n    successful_scrapes: results.filter(r => !r.error).length,\n    failed_scrapes: results.filter(r => r.error).length,\n    batch_scraped_at: new Date().toISOString()\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2704,
+        -464
+      ],
+      "id": "c0767f06-44b7-4363-aa79-0d50939128f7",
+      "name": "Get Amazon Product Detail"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.url }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Cookie",
+              "value": "i18n-prefs=USD; lc-main=en_US; session-id=132-7659494-0248300; session-id-time=2082787201l; skin=noskin"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        1664,
+        -240
+      ],
+      "id": "201cc96c-9136-43e5-9d53-24d132143819",
+      "name": "Get HTML of website"
+    },
+    {
+      "parameters": {
+        "operation": "extractHtmlContent",
+        "extractionValues": {
+          "values": [
+            {
+              "key": "product_links",
+              "cssSelector": "div div a[href*='/dp/']",
+              "returnValue": "attribute",
+              "attribute": "href",
+              "returnArray": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.html",
+      "typeVersion": 1.2,
+      "position": [
+        1872,
+        -240
+      ],
+      "id": "d0ba5836-b046-48ea-8f08-9cc396f5ca44",
+      "name": "HTML"
+    },
+    {
+      "parameters": {
+        "jsCode": "for (const item of $input.all()) {\n  // Remove duplicates from product_links array\n  const uniqueLinks = [...new Set($input.first().json.product_links)];\n  \n  // Add base URL to make complete URLs\n  const fullUrls = uniqueLinks.map(link => {\n    if (link.startsWith('/')) {\n      return `https://www.amazon.com${link}`;\n    }\n    return link; // in case it's already a full URL\n  });\n  \n  // Update the item with processed URLs\n  item.json.product_links = fullUrls;\n}\n\nreturn $input.all();"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2080,
+        -240
+      ],
+      "id": "31fc248d-4e6c-4931-981d-2b406a4bd83c",
+      "name": "Make Amazon accessible URL1."
+    },
+    {
+      "parameters": {
+        "jsCode": "// Split the URLs into individual items for processing one by one\nconst productLinks = $input.first().json.product_links;\nconst results = [];\n\nfor (const link of productLinks) {\n  results.push({\n    url: link\n  });\n}\n\nreturn results.map(r => ({ json: r })).slice(0,10);"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2288,
+        -240
+      ],
+      "id": "90eff9dc-691f-415a-a773-6d3be4d30be8",
+      "name": "Split URLs1"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.url }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "User-Agent",
+              "value": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        2496,
+        -240
+      ],
+      "id": "69210d18-b983-457a-9abb-16a91836d6fb",
+      "name": "URL-wise HTML gather"
+    },
+    {
+      "parameters": {
+        "jsCode": "const cheerio = require('cheerio');\nconst results = [];\n\nfor (const item of $input.all()) {\n  try {\n    const url = item.json.url;\n    const html = item.json.data;\n    const $ = cheerio.load(html);\n    \n    const name = $('#productTitle').text().trim();\n    const price = $('span.a-price span.a-price-whole').first().text().trim();\n    \n    const details = [];\n    $('#feature-bullets ul.a-unordered-list li span.a-list-item').each((i, el) => {\n      const text = $(el).text().trim();\n      if (text && text.length > 0) {\n        details.push(text);\n      }\n    });\n    \n    const pattern = $('#inline-twister-expanded-dimension-text-pattern_name').text().trim();\n    \n    results.push({\n      url,\n      name,\n      price,\n      details,\n      pattern,\n      scraped_at: new Date().toISOString()\n    });\n  } catch (error) {\n    console.error('Error processing item:', error);\n    results.push({\n      url: item.json.url || 'Unknown URL',\n      name: '',\n      price: '',\n      details: [],\n      pattern: '',\n      error: error.message,\n      scraped_at: new Date().toISOString()\n    });\n  }\n}\n\n// Return a single item containing all scraped data as an array\nreturn [{\n  json: {\n    products: results,\n    total_scraped: results.length,\n    successful_scrapes: results.filter(r => !r.error).length,\n    failed_scrapes: results.filter(r => r.error).length,\n    batch_scraped_at: new Date().toISOString()\n  }\n}];\nfor (const item of $input.all()) {\n  try {\n    const url = item.json.url;\n    const html = item.json.data;\n    const $ = cheerio.load(html);\n    \n    const name = $('#productTitle').text().trim();\n    const price = $('span.a-price span.a-price-whole').first().text().trim();\n    \n    const details = [];\n    $('#feature-bullets ul.a-unordered-list li span.a-list-item').each((i, el) => {\n      const text = $(el).text().trim();\n      if (text && text.length > 0) {\n        details.push(text);\n      }\n    });\n    \n    const pattern = $('#inline-twister-expanded-dimension-text-pattern_name').text().trim();\n    \n    results.push({\n      url,\n      name,\n      price,\n      details,\n      pattern,\n      scraped_at: new Date().toISOString()\n    });\n  } catch (error) {\n    console.error('Error processing item:', error);\n    results.push({\n      url: item.json.url || 'Unknown URL',\n      name: '',\n      price: '',\n      details: [],\n      pattern: '',\n      error: error.message,\n      scraped_at: new Date().toISOString()\n    });\n  }\n}\n\n// Return a single item containing all scraped data as an array\nreturn [{\n  json: {\n    products: results,\n    total_scraped: results.length,\n    successful_scrapes: results.filter(r => !r.error).length,\n    failed_scrapes: results.filter(r => r.error).length,\n    batch_scraped_at: new Date().toISOString()\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2704,
+        -240
+      ],
+      "id": "f7029ae6-b2ff-433d-b679-835c54310110",
+      "name": "Amazon Scraper2"
+    },
+    {
+      "parameters": {
+        "content": "Amazon Scraper",
+        "height": 544,
+        "width": 1936
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        992,
+        -560
+      ],
+      "id": "503500a7-513a-4ee7-b83a-9ff0f5599575",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "numberInputs": 4
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        3168,
+        48
+      ],
+      "id": "bec4630f-7d63-4605-91a8-f09c68f09102",
+      "name": "Merge – All Data"
+    },
+    {
+      "parameters": {
+        "jsCode": "// n8n JavaScript Code to Process and Return All Data in One Array\n// Combines all products and articles into a single array\n\nconst allData = [];\n\n// Loop through all input items\nfor (const item of $input.all()) {\n  let dataArray = item.json;\n  \n  // Handle if data is wrapped in a \"data\" property\n  if (dataArray.data && Array.isArray(dataArray.data)) {\n    dataArray = dataArray.data;\n  }\n  \n  // If it's already an array, use it directly\n  if (Array.isArray(dataArray)) {\n    // Process each item in the array\n    dataArray.forEach(data => {\n      // Check if this is a products object (has products array)\n      if (data.products && Array.isArray(data.products)) {\n        // Process each product\n        data.products.forEach(product => {\n          if (!product.error) { // Skip failed scrapes\n            allData.push({\n              type: 'product',\n              name: product.name,\n              price: product.price,\n              url: product.url,\n              pattern: product.pattern,\n              details: product.details,\n              scraped_at: product.scraped_at,\n              myNewField: 1,\n              // Additional processing fields\n              price_numeric: parseInt(product.price.replace(/[^\\d]/g, '')) || 0,\n              has_details: product.details && product.details.length > 0,\n              category: product.name.toLowerCase().includes('mat') ? 'mat' : \n                       product.name.toLowerCase().includes('rug') ? 'rug' : 'carpet',\n              detail_count: product.details ? product.details.length : 0\n            });\n          }\n        });\n        \n        // Also add summary data for the batch\n        allData.push({\n          type: 'scrape_summary',\n          total_scraped: data.total_scraped,\n          successful_scrapes: data.successful_scrapes,\n          failed_scrapes: data.failed_scrapes,\n          batch_scraped_at: data.batch_scraped_at,\n          myNewField: 1\n        });\n      }\n      \n      // Check if this is a news article\n      else if (data.title && data.link) {\n        allData.push({\n          type: 'article',\n          title: data.title,\n          link: data.link,\n          pubDate: data.pubDate,\n          isoDate: data.isoDate,\n          content: data.content,\n          contentSnippet: data.contentSnippet,\n          myNewField: 1,\n          // Additional processing fields\n          word_count: data.contentSnippet ? data.contentSnippet.split(' ').length : 0,\n          has_content: Boolean(data.content),\n          publish_date: new Date(data.isoDate),\n          domain: data.link.split('/')[2] || data.link,\n          source: data.link.split('/')[2] === 'corporate.target.com' ? 'Target' : \n                  data.link.split('/')[2] === 'ruginsider.com' ? 'Rug Insider' : 'Other'\n        });\n      }\n      \n      // Handle any other data structure\n      else {\n        allData.push({\n          ...data,\n          type: 'other',\n          myNewField: 1,\n          processed_at: new Date().toISOString()\n        });\n      }\n    });\n  }\n  // If it's not an array, process as single item\n  else {\n    allData.push({\n      ...dataArray,\n      type: 'single_item',\n      myNewField: 1,\n      processed_at: new Date().toISOString()\n    });\n  }\n}\n\n// Return all data as a single array in one item\nreturn [{ json: { allData: allData, totalItems: allData.length, processedAt: new Date().toISOString() } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3440,
+        80
+      ],
+      "id": "e120c435-eacf-4b12-8ac0-3b5ed08cd80f",
+      "name": "Combine All Data"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.allData }}",
+        "options": {
+          "systemMessage": "You are an expert internet researcher and trend analyst for the \"rugs\" category. Produce a single self-contained HTML document (UTF-8) that reports current and emerging rug trends found today {{ $now }} up to the last 7 days (i.e., include only sources published or snapshot within the date range: {{ $now }} minus 7 days through {{ $now }}). If no rug-related signals appear in that window, return an HTML report stating that clearly and the date range checked.\nRules & scope (strict):\nOnly consider signals explicitly about rugs (area rugs, runners, round rugs, mats). Ignore any products or posts not related to rugs.\nSources to search include (but are not limited to): Amazon Best Sellers & New Releases, Walmart top products, Target product/press pages, IKEA blog, Wayfair, Pinterest boards & catalogs, retailer blogs, product catalogs, Google Search results, news sites, and retailer press releases.\nFocus only on fresh trends from the last 7 days. Do not include older trends.\nFor each trend you include, cite the source name and snapshot/publish date (e.g., \"Amazon Best Sellers — Oct 9, 2025\") in the source line.\nIf a candidate source is a Google search result or scraped product page, include the product title, retailer, and snapshot date.\nScrape products, blogs, and news items and use those as the basis for trends. (If scraping is not possible in your environment, search and use public pages and metadata.)\nCombine multiple sources for the same signal where possible (e.g., \"Amazon + Pinterest + Wayfair showing high interest in 'high-pile shag' this week\").\n\nData extraction & normalization (required for every rug trend):\nFor each trend, extract and normalize the following attributes. Always present attributes in a 2-column table using the Attributes table template below — do NOT use an inline bullet list for core attributes.\nAttributes to extract and normalize:\nSize — examples: 2×3, 5×7, 8×10, runner, round. Use format 5×8 (lowercase x). If multiple sizes are common for the trend, list representative sizes separated by commas.\nColor — dominant color or family (normalized; prefer terms like Grey, Cream, Earthy tones, Warm neutrals, Blue). Use singular/plural consistently.\nMaterial — normalized to categories such as wool, jute, cotton, synthetic (polyester), viscose, polypropylene, etc.\nPattern — normalized to geometric, floral, abstract, distressed, kilim, solid, textured, etc.\nStyle — normalized to boho, minimalist, scandinavian, traditional, vintage, modern, transitional, etc.\nFeatures — normalized tags like washable, low-pile, hand-knotted, eco-friendly, non-slip, reversible, high-pile, shag, etc.\nPrice — place the trend into price buckets using this exact formatting rule: $X to $Y or $Y+. Suggested buckets to use where applicable: under $25, $25 to $50, $50 to $75, $75 to $200, $200 to $500, $500+. Always use $ and write ranges exactly as $75 to $200 etc. When you can, provide a short note with typical SKU price range in the analysis line (formatted like $75 to $200).\n\nFormatting & editorial rules (apply precisely):\nOutput must be valid HTML5, with embedded CSS in a <style> block at top that implements the style guide below.\nUse Inter font (link to Google Fonts in the HTML head) and apply the typographic rules:\nH1: Inter 700, 28px, color #444444, line-height 1.2\nH2: Inter 600, 18px, color #444444, line-height 1.25\nBody: Inter 400, 13px, color #000000, line-height 1.45\nLabel/meta: Inter 500 or italic 400, 11px, color #6B7280\nEmphasis/key terms: Inter 600, same size as body, color #1F4E79\nColour palette exact hex:\nHeading text: #444444\nBody text: #000000\nAccent/key labels: #1F4E79 (Dark Blue)\nSecondary/muted: #6B7280\nTable borders/dividers: #E6E6E6 or #F3F4F6\nPage margins: set container padding to 32–40px. Use spacing rules: paragraph spacing 8–10px, section spacing 18–28px.\nUse the Attributes table template for every trend. Table CSS must match this template:\nAttribute table header left column must be Dark Blue #1F4E79 (Inter 600, 12px). Values right column black #000000. Source line (small grey) must be Inter 11px #6B7280 and placed directly below the trend H2 or under the attributes table.\nFor each trend include:\nH2 (trend title — Title Case)\nSource line (small grey) with source name(s) and snapshot/publish date(s) — format Oct 9, 2025 (MMM D, YYYY).\nAttributes table (Attribute | Values / examples) — follow the exact attribute names.\nA 1–2 sentence analysis (body text) in sentence case, with one compact actionable insight (e.g., \"Consider launching a washable, low-pile 5×8 in warm neutrals at $75 to $200 for Q4 promotion.\").\nOptional: one small image or screenshot placeholder (use <img> with alt text) if a visual supports the trend. Provide caption (Inter 11px #6B7280) under the image.\nAlways convert tokens like 75_200 to $75 to $200. Follow the \"Fixes to existing content\" rules from the style doc.\nSizes must use 5×8 format (lowercase x). Prices use commas for thousands (e.g., $1,250).\nUse Oxford comma in lists.\nFor every factual/non-obvious claim (e.g., \"high-pile shag rising on Amazon + Pinterest this week\"), include the top 1–3 source lines (source name + snapshot date) and place them in a small \"Sources\" section at the end of the document (Appendix). Do not put full URLs in the HTML body; instead include the source title and date. If you scraped product titles, include them in the Appendix table with snapshot dates.\nAccessibility: every <img> must include alt text. Use semantic HTML (headings, tables, paragraphs).\n\nOutput structure (required):\nTitle page: H1 with the main heading (Title Case) and one-line descriptor under it (small grey).\nExecutive summary: 2–3 short sentences summarizing the top 2–3 signals this week.\nTrends: For each trend (ordered by strength of signal), one H2 lead, source line, Attributes table, 1–2 line analysis, optional image + caption.\nAppendix: a small table listing raw sources with snapshot dates and short notes (e.g., \"Amazon Best Sellers — Oct 9, 2025 — top 10 show X\"). Use Inter 11px #6B7280 for the metadata lines.\n\nWhen extracting trends:\nIf a trend is supported by multiple product SKUs or multiple retailers, aggregate and show that in the analysis and in the Appendix (list top SKUs with their price if available).\nIf the data is ambiguous, still include the trend but explicitly mark uncertainty (e.g., \"signal strength: low — only 1 retailer this week\").\nIf the trend is non-rug or outside the 7-day window, ignore it.\n\nDeliverable:\nReturn only the final HTML document (no extra text or commentary).\nThe HTML must be ready to render and follow the style guide above.\nEnsure all price buckets and attribute normalizations follow the editorial rules.\n\nIf you cannot access live web pages in this environment, substitute \"snapshot\" with the search date and include a note in the Appendix that the content was collected via search metadata on the date range: ({{ $now }} minus 7 days through {{ $now }}).\nEnd of prompt."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        3648,
+        80
+      ],
+      "id": "8d2437bc-56b8-47ad-8e90-62cf84247402",
+      "name": "Analyze All Data"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        3520,
+        288
+      ],
+      "id": "300f7d3b-69ba-4731-9c21-f838379d06b8",
+      "name": "Google Gemini Chat Model2",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "TB2Z6h7fHkRtgIPK",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "let html = $input.first().json.output;\n\n// Remove markdown fences like ```html or ```\nhtml = html.replace(/```html|```/g, \"\");\n\n// Remove all \\n, \\r, \\t, and excessive spaces\nhtml = html.replace(/\\\\[nrt]/g, \" \").replace(/\\s{2,}/g, \" \");\n\n// Remove duplicate or misplaced <html> / <body> wrappers\nhtml = html.replace(/<\\/?body><\\/?body>/g, \"\")\n           .replace(/<\\/?html><\\/?html>/g, \"\")\n           .replace(/<body><!DOCTYPE html>/g, \"<!DOCTYPE html>\");\n\n// Trim leading/trailing spaces\nhtml = html.trim();\n\n// Optional: Ensure the final HTML starts and ends properly\nif (!html.startsWith(\"<!DOCTYPE html>\")) {\n  html = `<!DOCTYPE html><html><body>${html}</body></html>`;\n}\n\n// Return clean minified HTML\nreturn [{ json: { cleaned_minified_html: html } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4000,
+        80
+      ],
+      "id": "aa43196b-8e30-4143-91e0-2bf4913f8e96",
+      "name": "Clean AI Output."
+    },
+    {
+      "parameters": {
+        "jsCode": "const text = $input.first().json.cleaned_minified_html;\nconst buffer = Buffer.from(text, 'utf8');\nconst binaryData = {\n  data: buffer.toString('base64'),\n  mimeType: 'application/octet-stream',\n  fileName: 'file.html',\n};\nitems[0].binary = { data: binaryData };\nreturn items;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4208,
+        80
+      ],
+      "id": "ed0cf7a1-17d4-4932-89bd-4316c585b6a8",
+      "name": "Download HTML File"
+    },
+    {
+      "parameters": {
+        "html": "{{ $json.cleaned_minified_html }}"
+      },
+      "type": "n8n-nodes-base.html",
+      "typeVersion": 1.2,
+      "position": [
+        4416,
+        80
+      ],
+      "id": "129e55d5-cb54-4310-8e86-040f4221160f",
+      "name": "HTML1"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Loop over input items and add a new field called 'agent-id' to each JSON object\nfor (const item of $input.all()) {\n  item.json[\"agent_id\"] = 2;\n  item.json[\"input\"] = $('When chat message received').first().json.chatInput;\n}\n\nreturn $input.all();"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4144,
+        224
+      ],
+      "id": "2e3ea041-9e3a-4666-be79-ffa80ea12997",
+      "name": "Before Supabase"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "6d3b7905-61e5-4f0d-880a-7a428ec2ce59",
+              "leftValue": "={{ $json.agentId }}",
+              "rightValue": 2,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        4560,
+        224
+      ],
+      "id": "73972474-1892-4bf8-98ff-52adc10f2117",
+      "name": "If1"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "agent_output",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "agentId",
+              "keyValue": "{{ $json.agent_id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        4352,
+        224
+      ],
+      "id": "57043650-90b2-45a9-94d6-ffdd5d5ef5cf",
+      "name": "Get a row",
+      "credentials": {
+        "supabaseApi": {
+          "id": "3xtdNzRD6ioPDMmn",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "agent_output",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "output_text",
+              "fieldValue": "={{ $('Code').item.json.output }}"
+            },
+            {
+              "fieldId": "agentId",
+              "fieldValue": "2"
+            },
+            {
+              "fieldId": "input_text",
+              "fieldValue": "={{ $('Code').item.json.input }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        4768,
+        128
+      ],
+      "id": "6e01c615-0ffd-48e4-b2e0-e0752f3209d4",
+      "name": "Update a row",
+      "credentials": {
+        "supabaseApi": {
+          "id": "3xtdNzRD6ioPDMmn",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "tableId": "agent_output",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "output_text",
+              "fieldValue": "={{ $('Code').item.json.output }}"
+            },
+            {
+              "fieldId": "agentId",
+              "fieldValue": "2"
+            },
+            {
+              "fieldId": "input_text",
+              "fieldValue": "={{ $('Code').item.json.output }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        4768,
+        320
+      ],
+      "id": "e056886b-694a-487b-ad24-3a071ba9aaaf",
+      "name": "Create a row",
+      "credentials": {
+        "supabaseApi": {
+          "id": "3xtdNzRD6ioPDMmn",
+          "name": "Supabase account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "Find User Intent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Find User Intent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "Find User Intent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find User Intent": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Modern Rug Importers Blog",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Nazmiyal Antique Rugs Blog",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Home Accents Today – Rugs / Trendspotting",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Rugs Handmade Blog",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Google Search",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Find URLs",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Modern Rug Importers Blog": {
+      "main": [
+        [
+          {
+            "node": "Merge – RSS Feeds.",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Nazmiyal Antique Rugs Blog": {
+      "main": [
+        [
+          {
+            "node": "Merge – RSS Feeds.",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Home Accents Today – Rugs / Trendspotting": {
+      "main": [
+        [
+          {
+            "node": "Merge – RSS Feeds.",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Merge – RSS Feeds.": {
+      "main": [
+        [
+          {
+            "node": "Split – RSS Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split – RSS Fields": {
+      "main": [
+        [
+          {
+            "node": "Filter – Recent Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Rugs Handmade Blog": {
+      "main": [
+        [
+          {
+            "node": "Merge – RSS Feeds.",
+            "type": "main",
+            "index": 3
+          }
+        ]
+      ]
+    },
+    "Find URLs": {
+      "main": [
+        [
+          {
+            "node": "Amazon Scraper",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Amazon Scraper": {
+      "main": [
+        [
+          {
+            "node": "Amazon Products",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Amazon Collections",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Amazon Products": {
+      "main": [
+        [
+          {
+            "node": "Get HTML Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Get Amazon Product Detail",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get HTML Content": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Amazon Product Detail": {
+      "main": [
+        [
+          {
+            "node": "Merge – All Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Amazon Collections": {
+      "main": [
+        [
+          {
+            "node": "Get HTML of website",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get HTML of website": {
+      "main": [
+        [
+          {
+            "node": "HTML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTML": {
+      "main": [
+        [
+          {
+            "node": "Make Amazon accessible URL1.",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Make Amazon accessible URL1.": {
+      "main": [
+        [
+          {
+            "node": "Split URLs1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split URLs1": {
+      "main": [
+        [
+          {
+            "node": "URL-wise HTML gather",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "URL-wise HTML gather": {
+      "main": [
+        [
+          {
+            "node": "Amazon Scraper2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Search": {
+      "main": [
+        [
+          {
+            "node": "Merge – All Data",
+            "type": "main",
+            "index": 3
+          }
+        ]
+      ]
+    },
+    "Filter – Recent Items": {
+      "main": [
+        [
+          {
+            "node": "Merge – All Data",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Amazon Scraper2": {
+      "main": [
+        [
+          {
+            "node": "Merge – All Data",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge – All Data": {
+      "main": [
+        [
+          {
+            "node": "Combine All Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Combine All Data": {
+      "main": [
+        [
+          {
+            "node": "Analyze All Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Analyze All Data",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analyze All Data": {
+      "main": [
+        [
+          {
+            "node": "Before Supabase",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Clean AI Output.",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clean AI Output.": {
+      "main": [
+        [
+          {
+            "node": "Download HTML File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download HTML File": {
+      "main": [
+        [
+          {
+            "node": "HTML1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Before Supabase": {
+      "main": [
+        [
+          {
+            "node": "Get a row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get a row": {
+      "main": [
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If1": {
+      "main": [
+        [
+          {
+            "node": "Update a row",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create a row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "9a4f9509-fbb8-43b4-8e31-988ad5277745",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "c14dc8b263848e25424e0072f0e1a72a34ae315cae8811e2bef5175f81f5209c"
+  },
+  "id": "hfOHpbplIOJnnKZs",
+  "tags": []
+}
